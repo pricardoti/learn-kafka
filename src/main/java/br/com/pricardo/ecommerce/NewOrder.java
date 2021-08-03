@@ -1,5 +1,6 @@
 package br.com.pricardo.ecommerce;
 
+import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -12,6 +13,7 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 import static br.com.pricardo.ecommerce.EcommerceKafkaConstants.KAFKA_HOST_CONNECTION;
+import static br.com.pricardo.ecommerce.EcommerceKafkaConstants.KAFKA_TOPIC_EMAIL;
 import static br.com.pricardo.ecommerce.EcommerceKafkaConstants.KAFKA_TOPIC_NEW_ORDER;
 import static java.util.Objects.nonNull;
 import static org.apache.kafka.clients.producer.ProducerConfig.BOOTSTRAP_SERVERS_CONFIG;
@@ -24,24 +26,27 @@ public class NewOrder {
 
     public static void main(String[] args) throws ExecutionException, InterruptedException {
         var producer = new KafkaProducer<String, String>(properties());
-
         var idMessage = UUID.randomUUID().toString();
-        var record = new ProducerRecord<>(KAFKA_TOPIC_NEW_ORDER, idMessage, "Message Send: " + LocalDateTime.now());
 
-        sendMessage(producer, record);
+        sendMessage(producer, new ProducerRecord<>(KAFKA_TOPIC_NEW_ORDER, idMessage, "Message test new order send: " + LocalDateTime.now()));
+        sendMessage(producer, new ProducerRecord<>(KAFKA_TOPIC_EMAIL, idMessage, "client@email.com"));
     }
 
     private static void sendMessage(
             KafkaProducer<String, String> producer,
             ProducerRecord<String, String> record
     ) throws InterruptedException, ExecutionException {
-        producer.send(record, (data, ex) -> {
+        producer.send(record, callback()).get();
+    }
+
+    private static Callback callback() {
+        return (data, ex) -> {
             if (nonNull(ex)) {
                 ex.printStackTrace();
                 return;
             }
             logger.info("..:: SEND MESSAGE ::: Topic: " + data.topic() + " | Offset: " + data.offset() + " | Partition: " + data.partition() + " | Timestamp: " + data.timestamp() + " ::..");
-        }).get();
+        };
     }
 
     /**
