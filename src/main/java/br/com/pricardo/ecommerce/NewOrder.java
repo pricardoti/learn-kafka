@@ -11,6 +11,8 @@ import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
+import static br.com.pricardo.ecommerce.EcommerceKafkaConstants.KAFKA_HOST_CONNECTION;
+import static br.com.pricardo.ecommerce.EcommerceKafkaConstants.KAFKA_TOPIC_NEW_ORDER;
 import static java.util.Objects.nonNull;
 import static org.apache.kafka.clients.producer.ProducerConfig.BOOTSTRAP_SERVERS_CONFIG;
 import static org.apache.kafka.clients.producer.ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG;
@@ -20,14 +22,11 @@ public class NewOrder {
 
     private static final Logger logger = LoggerFactory.getLogger(NewOrder.class);
 
-    private static final String HOST_CONNECTION = "localhost:9092";
-    private static final String KAFKA_TOPIC_DEFAULT = "ECOMMERCE_NEW_ORDER";
-
     public static void main(String[] args) throws ExecutionException, InterruptedException {
         var producer = new KafkaProducer<String, String>(properties());
 
         var idMessage = UUID.randomUUID().toString();
-        var record = new ProducerRecord<>(KAFKA_TOPIC_DEFAULT, idMessage, "Message Send: " + LocalDateTime.now());
+        var record = new ProducerRecord<>(KAFKA_TOPIC_NEW_ORDER, idMessage, "Message Send: " + LocalDateTime.now());
 
         sendMessage(producer, record);
     }
@@ -41,7 +40,7 @@ public class NewOrder {
                 ex.printStackTrace();
                 return;
             }
-            logger.info("..:: DATA MESSAGE ::: Topic: " + data.topic() + " | Offset: " + data.offset() + " | Partition: " + data.partition() + " | Timestamp: " + data.timestamp() + " ::..");
+            logger.info("..:: SEND MESSAGE ::: Topic: " + data.topic() + " | Offset: " + data.offset() + " | Partition: " + data.partition() + " | Timestamp: " + data.timestamp() + " ::..");
         }).get();
     }
 
@@ -51,7 +50,7 @@ public class NewOrder {
      */
     private static Properties properties() {
         var properties = new Properties();
-        properties.setProperty(BOOTSTRAP_SERVERS_CONFIG, HOST_CONNECTION);
+        properties.setProperty(BOOTSTRAP_SERVERS_CONFIG, KAFKA_HOST_CONNECTION);
         properties.setProperty(KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         properties.setProperty(VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         return properties;
